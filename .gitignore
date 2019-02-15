@@ -1,0 +1,24 @@
+# Build artifacts
+build/
+bin/
+*.o
+*.a
+*.so
+*.dylib
+*.out
+*.checked
+*.cui
+
+# F* cache files
+.fstar-cache/
+.depend
+*~
+*.swp
+
+# Python cache
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# OS artifacts
+.DS_Store
