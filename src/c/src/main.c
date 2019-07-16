@@ -37,13 +37,16 @@ static void task_telecommand_ingest(void *ctx) {
     uint8_t rx_buf[2048];
     size_t rx_len = 0;
 
-    nacelle_status_t status = nacelle_comms_recv_nonblocking(&sys->comms, rx_buf, sizeof(rx_buf), &rx_len);
-    if (status == NACELLE_OK && rx_len >= 4) {
+    while (nacelle_comms_recv_nonblocking(&sys->comms, rx_buf, sizeof(rx_buf), &rx_len) == NACELLE_OK && rx_len > 0) {
+        if (rx_len < 4) {
+            continue;
+        }
+
         /* Verify CRC16 if frame contains trailer */
         if (rx_len >= 6) {
             uint16_t expected_crc = nacelle_read_u16_be(&rx_buf[rx_len - 2]);
             if (!nacelle_crc16_verify(rx_buf, rx_len - 2, expected_crc)) {
-                return;
+                continue;
             }
         }
 
@@ -61,7 +64,7 @@ static void task_telecommand_ingest(void *ctx) {
             nacelle_packet_view_t pkt;
             if (nacelle_packet_parse(&rx_buf[2], frame_hdr.payload_len, &pkt) == NACELLE_OK) {
                 nacelle_queue_entry_t entry;
-                entry.command_id = sys->exec.cmd_queue.count + 1;
+                entry.command_id = (uint32_t)sys->exec.cmd_queue.count + 1;
                 entry.dispatch_time = nacelle_get_monotonic_time();
                 entry.priority = NACELLE_PRIORITY_NORMAL;
                 entry.channel = pkt.header.channel;
