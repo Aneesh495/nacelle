@@ -39,7 +39,7 @@ uint16_t nacelle_crc16_step_bit(uint16_t crc, bool bit) {
     bool msb = (crc & 0x8000U) != 0;
     uint16_t shifted = (uint16_t)(crc << 1);
     if (bit) {
-        shifted |= 0x0001U;
+        shifted ^= NACELLE_CRC16_POLY;
     }
     if (msb) {
         return shifted ^ NACELLE_CRC16_POLY;
@@ -48,9 +48,13 @@ uint16_t nacelle_crc16_step_bit(uint16_t crc, bool bit) {
 }
 
 uint16_t nacelle_crc16_step_byte(uint16_t crc, uint8_t byte) {
-    for (int i = 7; i >= 0; --i) {
-        bool bit = ((byte >> i) & 1U) != 0;
-        crc = nacelle_crc16_step_bit(crc, bit);
+    crc ^= (uint16_t)((uint16_t)byte << 8);
+    for (int i = 0; i < 8; ++i) {
+        if (crc & 0x8000U) {
+            crc = (uint16_t)((crc << 1) ^ NACELLE_CRC16_POLY);
+        } else {
+            crc = (uint16_t)(crc << 1);
+        }
     }
     return crc;
 }
